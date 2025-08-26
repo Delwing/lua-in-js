@@ -8,7 +8,8 @@ import {
     hasOwnProperty,
     LuaType,
     posrelat,
-    tostring
+    tostring,
+    executeFunction
 } from '../utils'
 
 const ROSETTA_STONE: Record<string, string> = {
@@ -239,8 +240,8 @@ function gsub(s: LuaType, pattern: LuaType, repl: LuaType, n?: LuaType): string 
     const REPL = ((): ((strs: string[]) => string) => {
         if (typeof repl === 'function')
             return strs => {
-                const ret = repl(strs[0])[0]
-                return ret === undefined ? strs[0] : ret
+                const ret = executeFunction(repl, strs[0])[0]
+                return (ret === undefined ? strs[0] : ret) as string
             }
 
         if (repl instanceof Table) return strs => repl.get(strs[0]).toString()

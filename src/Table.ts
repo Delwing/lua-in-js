@@ -1,4 +1,4 @@
-import { hasOwnProperty, LuaType, tostring } from './utils'
+import { hasOwnProperty, LuaType, tostring, executeFunction } from './utils'
 
 type MetaMethods =
     // unary op
@@ -69,8 +69,7 @@ class Table {
             }
 
             if (typeof mm === 'function') {
-                const v = mm.call(undefined, this, key)
-                return v instanceof Array ? v[0] : v
+                return executeFunction(mm, this, key)[0]
             }
         }
 
@@ -108,7 +107,8 @@ class Table {
                     return mm.set(key, value)
                 }
                 if (typeof mm === 'function') {
-                    return mm(this, key, value)
+                    executeFunction(mm, this, key, value)
+                    return
                 }
             }
         }

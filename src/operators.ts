@@ -1,5 +1,5 @@
 import { MetaMethods, Table } from './Table'
-import { coerceToNumber, coerceToString, LuaType, coerceToBoolean } from './utils'
+import { coerceToNumber, coerceToString, LuaType, coerceToBoolean, executeFunction } from './utils'
 import { LuaError } from './LuaError'
 
 const binaryArithmetic = <R extends boolean | number>(
@@ -11,7 +11,7 @@ const binaryArithmetic = <R extends boolean | number>(
     const mm =
         (left instanceof Table && left.getMetaMethod(metaMethodName)) ||
         (right instanceof Table && right.getMetaMethod(metaMethodName))
-    if (mm) return mm(left, right)[0]
+    if (mm) return executeFunction(mm, left, right)[0] as R
 
     const L = coerceToNumber(left, 'attempt to perform arithmetic on a %type value')
     const R = coerceToNumber(right, 'attempt to perform arithmetic on a %type value')
@@ -52,14 +52,14 @@ const not = (value: LuaType): boolean => !bool(value)
 
 const unm = (value: LuaType): number => {
     const mm = value instanceof Table && value.getMetaMethod('__unm')
-    if (mm) return mm(value)[0]
+    if (mm) return executeFunction(mm, value)[0] as number
 
     return -1 * coerceToNumber(value, 'attempt to perform arithmetic on a %type value')
 }
 
 const bnot = (value: LuaType): number => {
     const mm = value instanceof Table && value.getMetaMethod('__bnot')
-    if (mm) return mm(value)[0]
+    if (mm) return executeFunction(mm, value)[0] as number
 
     return ~coerceToNumber(value, 'attempt to perform arithmetic on a %type value')
 }
@@ -67,7 +67,7 @@ const bnot = (value: LuaType): number => {
 const len = (value: LuaType): number => {
     if (value instanceof Table) {
         const mm = value.getMetaMethod('__len')
-        if (mm) return mm(value)[0]
+        if (mm) return executeFunction(mm, value)[0] as number
 
         return value.getn()
     }
@@ -135,7 +135,7 @@ const concat = (left: LuaType, right: LuaType): string => {
     const mm =
         (left instanceof Table && left.getMetaMethod('__concat')) ||
         (right instanceof Table && right.getMetaMethod('__concat'))
-    if (mm) return mm(left, right)[0]
+    if (mm) return executeFunction(mm, left, right)[0] as string
 
     const L = coerceToString(left, 'attempt to concatenate a %type value')
     const R = coerceToString(right, 'attempt to concatenate a %type value')
@@ -152,7 +152,7 @@ const eq = (left: LuaType, right: LuaType): boolean => {
         left.metatable === right.metatable &&
         left.getMetaMethod('__eq')
 
-    if (mm) return !!mm(left, right)[0]
+    if (mm) return !!executeFunction(mm, left, right)[0]
 
     return left === right
 }

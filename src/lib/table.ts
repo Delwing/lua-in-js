@@ -5,7 +5,8 @@ import {
     coerceArgToNumber,
     coerceArgToString,
     coerceArgToTable,
-    coerceArgToFunction
+    coerceArgToFunction,
+    executeFunction
 } from '../utils'
 import { LuaError } from '../LuaError'
 
@@ -147,7 +148,7 @@ function sort(table: Table, comp?: Function): void {
 
     if (comp) {
         const COMP = coerceArgToFunction(comp, 'sort', 2)
-        sortFunc = (a, b) => (coerceToBoolean(COMP(a, b)[0]) ? -1 : 1)
+        sortFunc = (a, b) => (coerceToBoolean(executeFunction(COMP, a, b)[0]) ? -1 : 1)
     } else {
         sortFunc = (a, b) => (a < b ? -1 : 1)
     }

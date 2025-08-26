@@ -42,7 +42,7 @@ function type(v: LuaType): 'string' | 'number' | 'boolean' | 'function' | 'nil' 
 function tostring(v: LuaType): string {
     if (v instanceof Table) {
         const mm = v.getMetaMethod('__tostring')
-        if (mm) return mm(v)[0]
+        if (mm) return executeFunction(mm, v)[0] as string
 
         return valToStr(v, 'table: 0x')
     }
@@ -216,6 +216,16 @@ const ensureArray = <T>(value: T | T[]): T[] => (value instanceof Array ? value 
 const hasOwnProperty = (obj: Record<string, unknown> | unknown[], key: string | number): boolean =>
     Object.prototype.hasOwnProperty.call(obj, key)
 
+function executeFunction(fn: Function, ...args: LuaType[]): LuaType[] {
+    const res = fn(...args)
+    if (res && typeof (res as any).next === 'function') {
+        let r = (res as any).next()
+        while (!r.done) r = (res as any).next()
+        return ensureArray(r.value as LuaType)
+    }
+    return ensureArray(res as LuaType)
+}
+
 export {
     LuaType,
     Config,
@@ -232,5 +242,6 @@ export {
     coerceArgToTable,
     coerceArgToThread,
     ensureArray,
-    hasOwnProperty
+    hasOwnProperty,
+    executeFunction
 }

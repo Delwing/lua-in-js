@@ -11,7 +11,7 @@ import { libString, metatable as stringMetatable } from './lib/string'
 import { getLibOS } from './lib/os'
 import { getLibPackage } from './lib/package'
 import { libCoroutine } from './lib/coroutine'
-import { LuaType, ensureArray, Config, hasOwnProperty } from './utils'
+import { LuaType, Config, hasOwnProperty, executeFunction } from './utils'
 import { Thread } from './Thread'
 import { parse as parseScript } from './parser'
 
@@ -23,17 +23,11 @@ const call = (f: Function | Table | Thread, ...args: LuaType[]): LuaType[] => {
     if (f instanceof Thread) return f.resume(...args)
 
     if (f instanceof Function) {
-        const res = f(...args)
-        if (res && typeof res.next === 'function') {
-            let r = res.next()
-            while (!r.done) r = res.next()
-            return ensureArray(r.value)
-        }
-        return ensureArray(res as LuaType)
+        return executeFunction(f, ...args)
     }
 
     const mm = f instanceof Table && f.getMetaMethod('__call')
-    if (mm) return ensureArray(mm(f, ...args))
+    if (mm) return executeFunction(mm, f, ...args)
 
     throw new LuaError(`attempt to call an uncallable type`)
 }
