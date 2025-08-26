@@ -13,11 +13,23 @@ import {
     coerceArgToNumber,
     coerceArgToString,
     coerceArgToTable,
-    hasOwnProperty
+    hasOwnProperty,
+    executeFunction
 } from '../utils'
+import { Thread } from '../Thread'
 import { metatable as stringMetatable } from './string'
 
 const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+const call = (f: LuaType, ...args: LuaType[]): LuaType[] => {
+    if (f instanceof Thread) return f.resume(...args)
+    if (typeof f === 'function') return executeFunction(f, ...args)
+    if (f instanceof Table) {
+        const mm = f.getMetaMethod('__call')
+        if (mm) return executeFunction(mm, f, ...args)
+    }
+    throw new LuaError('Attempt to call non-function')
+}
 
 function ipairsIterator(table: Table, index: number): LuaType[] {
     if (index === undefined) {
@@ -170,12 +182,8 @@ function pairs(t: LuaType): [Function, Table, undefined] {
  * In case of any error, pcall returns false plus the error message.
  */
 function pcall(f: LuaType, ...args: LuaType[]): [false, string] | [true, ...LuaType[]] {
-    if (typeof f !== 'function') {
-        throw new LuaError('Attempt to call non-function')
-    }
-
     try {
-        return [true, ...f(...args)]
+        return [true, ...call(f, ...args)]
     } catch (e) {
         return [false, e && e.toString()]
     }
@@ -301,14 +309,10 @@ function tonumber(e: LuaType, base: LuaType): number {
  * This function is similar to pcall, except that it sets a new message handler msgh.
  */
 function xpcall(f: LuaType, msgh: LuaType, ...args: LuaType[]): [false, string] | [true, ...LuaType[]] {
-    if (typeof f !== 'function' || typeof msgh !== 'function') {
-        throw new LuaError('Attempt to call non-function')
-    }
-
     try {
-        return [true, ...f(...args)]
+        return [true, ...call(f, ...args)]
     } catch (e) {
-        return [false, msgh(e)[0]]
+        return [false, call(msgh, e)[0] as string]
     }
 }
 
@@ -329,7 +333,7 @@ function createG(cfg: Config, execChunk: (_G: Table, chunk: string) => LuaType[]
             let ret = ' '
             while (ret !== '' && ret !== undefined) {
                 C += ret
-                ret = chunk()[0]
+                ret = call(chunk)[0] as string
             }
         } else {
             C = coerceArgToString(chunk, 'load', 1)
