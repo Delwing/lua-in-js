@@ -77,7 +77,7 @@ run 'lib'
 run 'lib-string'
 run 'lib-table'
 run 'lib-math'
--- run 'lib-coroutine'
+run 'lib-coroutine'
 run 'lib-date'
 
 
