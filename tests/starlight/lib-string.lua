@@ -503,11 +503,12 @@ assertEqual (b, "a = 'a', b = 'b', c = 'c'", 'string.gsub() should match $ with 
 local a = 'McLaren Mercedes'
 
 local b = string.len ('');
-local c = string.len (a);
+local c = string.len(a);
+local d = function() string.len() end
 
 assertTrue (b == 0, 'string.len() should return 0 if passed an empty string')
 assertTrue (c == 16, 'string.len() should return the length of the string in the first argument')
-
+assertTrue (not pcall(d), 'string.len() should error when passed nil')
 
 
 

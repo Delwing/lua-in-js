@@ -172,10 +172,10 @@ function format(formatstring: string, ...args: LuaType[]): string {
         if (arg === undefined) {
             throw new LuaError(`bad argument #${i} to 'format' (no value)`)
         }
-        if (/A|a|E|e|f|G|g/.test(modifier)) {
+        if (/[AaEefGg]/.test(modifier)) {
             return sprintf(format, coerceArgToNumber(arg, 'format', i))
         }
-        if (/c|d|i|o|u|X|x/.test(modifier)) {
+        if (/[cdiouXx]/.test(modifier)) {
             return sprintf(format, coerceArgToNumber(arg, 'format', i))
         }
 
@@ -272,6 +272,9 @@ function gsub(s: LuaType, pattern: LuaType, repl: LuaType, n?: LuaType): string 
  * Embedded zeros are counted, so "a\000bc\000" has length 5.
  */
 function len(s: LuaType): number {
+    if (s === undefined) {
+        throw new LuaError(`bad argument #1 to 'len' (string expected got nil)`)
+    }
     const str = coerceArgToString(s, 'len', 1)
     return str.length
 }
